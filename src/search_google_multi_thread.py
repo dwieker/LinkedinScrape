@@ -17,9 +17,11 @@ logging.basicConfig(
 
 
 def search_linkedin_profile(index, first_name: str, last_name: str, affiliation: str):
+    # You will need to sign up for the SERP Scraper API
+    # https://dashboard.oxylabs.io/en/
     response = requests.post(
         "https://realtime.oxylabs.io/v1/queries",
-        auth=("dwieker_2VNbI", "yWn5uRimPJgggb"),
+        auth=("<username>", "<password>"),
         json={
             "source": "google_search",
             "query": f"linkedin {first_name} {last_name} {affiliation}",

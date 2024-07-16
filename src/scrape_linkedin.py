@@ -224,6 +224,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--save-every", type=int, default=3)
     arg_parser.add_argument("--headless", default=False, action="store_true")
     arg_parser.add_argument("--n-profiles", default=30, type=int)
+    arg_parser.add_argument("--max-fails-in-a-row", default=3, type=int)
     args = arg_parser.parse_args()
 
     chrome_options = webdriver.ChromeOptions()
@@ -281,8 +282,8 @@ if __name__ == "__main__":
             failed_in_a_row = 0
         except Exception as e:
             failed_in_a_row += 1
-            if failed_in_a_row >= 1:
-                logging.error("Failed 3 times in a row. Stopping.")
+            if failed_in_a_row >= args.max_fails_in_a_row:
+                logging.error("Failed too many times in a row. Stopping.")
                 raise e
             else:
                 logging.error("Failed, skipping...")
