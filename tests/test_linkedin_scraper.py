@@ -30,3 +30,11 @@ def test_extract_linkedin_profile(url, expected_result):
 def test_extract_post_age():
     posts = LinkedinPostScraper.find_posts(soup)
     assert LinkedinPostScraper.extract_post_age(posts[0]) == "1 month ago"
+
+
+def test_extract_post_id():
+    posts = LinkedinPostScraper.find_posts(soup)
+    assert (
+        LinkedinPostScraper.extract_post_id(posts[0])
+        == "urn:li:activity:7209857490010656768"
+    )

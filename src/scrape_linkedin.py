@@ -70,10 +70,7 @@ class LinkedinPostScraper:
             "a",
             class_=re.compile("update-components-actor__sub-description-link"),
         )
-        if post_age:
-            return post_age.find_all("span")[-1].text.strip()
-        else:
-            return ""
+        return post_age.find_all("span")[-1].text.strip()
 
     def extract_likes(post) -> int:
         likes = post.find(
@@ -147,6 +144,9 @@ class LinkedinPostScraper:
     def extract_mini_bio(soup) -> str:
         return soup.find("div", class_="text-body-medium break-words").text.strip()
 
+    def extract_post_id(soup) -> str:
+        return soup["data-urn"]
+
     def scrape_profile(self, url: str):
         self.driver.get(url)
         time.sleep(3)
@@ -195,6 +195,7 @@ class LinkedinPostScraper:
                     "text": LinkedinPostScraper.extract_text(post),
                     "is_repost": LinkedinPostScraper.extract_is_repost(post),
                     "post_type": LinkedinPostScraper.extract_post_type(post),
+                    "post_id": LinkedinPostScraper.extract_post_id(post),
                 }
                 for post in posts
             ]
@@ -225,6 +226,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--headless", default=False, action="store_true")
     arg_parser.add_argument("--n-profiles", default=30, type=int)
     arg_parser.add_argument("--max-fails-in-a-row", default=3, type=int)
+    arg_parser.add_argument("--override", default=False, action="store_true")
     args = arg_parser.parse_args()
 
     chrome_options = webdriver.ChromeOptions()
@@ -238,7 +240,7 @@ if __name__ == "__main__":
         chrome_options.add_argument("--headless")
 
     df_in = pandas.read_csv(args.input, index_col=None).sample(frac=1.0)
-    assert "linkedin_url" in df_in, "input csv must contain linkedin_url column"
+    assert "profile_url" in df_in, "input csv must contain profile_url column"
 
     try:
         df_out = pandas.read_csv(args.output)
@@ -254,6 +256,7 @@ if __name__ == "__main__":
                 "text",
                 "is_repost",
                 "post_type",
+                "post_id",
             ]
         )
 
@@ -261,7 +264,7 @@ if __name__ == "__main__":
 
     completed = 0
     failed_in_a_row = 0
-    for i, profile_url in enumerate(df_in.linkedin_url):
+    for i, profile_url in enumerate(df_in.profile_url):
         if completed >= args.n_profiles:
             break
 
@@ -271,7 +274,7 @@ if __name__ == "__main__":
             logging.error(f"{profile_url} is malformed, skipping...")
             continue
 
-        if df_out.profile_url.str.contains(parsed_url).any():
+        if not args.override and df_out.profile_url.str.contains(parsed_url).any():
             logging.info(f"{parsed_url} already scraped, skipping ...")
             continue
 
@@ -291,6 +294,7 @@ if __name__ == "__main__":
 
         logging.info(post_data)
 
+        df_out = df_out[df_out.profile_url != profile_url]
         df_out = df_out.append(post_data, ignore_index=True)
 
         if (i + 1) % args.save_every == 0:

@@ -36,8 +36,8 @@ def search_linkedin_profile(index, first_name: str, last_name: str, affiliation:
             logging.info(f"{first_name} {last_name} - {affiliation} - {url}")
             return index, url
 
-    logging.info(f"{first_name} {last_name} - {affiliation} - FAILED")
-    return index, "FAILED"
+    logging.info(f"{first_name} {last_name} - {affiliation} - NOT FOUND")
+    return index, "NOT FOUND"
 
 
 def main():
@@ -49,14 +49,14 @@ def main():
 
     df = pandas.read_csv(args.input, index_col=None)
 
-    if "linkedin_url" not in df:
-        df["linkedin_url"] = None
+    if "profile_url" not in df:
+        df["profile_url"] = None
 
     assert "HCP First Name" in df
     assert "HCP Last Name" in df
     assert "Affiliation" in df
 
-    rows_to_process = df[df.linkedin_url.isnull()].iterrows()
+    rows_to_process = df[df.profile_url.isnull()].iterrows()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
         futures = []
@@ -75,8 +75,8 @@ def main():
                 logging.error(future.exception())
                 continue
 
-            index, linkedin_url = future.result()
-            df.loc[index, "linkedin_url"] = linkedin_url
+            index, profile_url = future.result()
+            df.loc[index, "profile_url"] = profile_url
 
             if (i + 1) % args.save_every == 0:
                 df.to_csv(args.input, index=False)

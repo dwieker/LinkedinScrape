@@ -1,0 +1,6 @@
+.tmp*
+activity_files
+.google-cookie
+*.csv
+__pycache__/
+*.gsheet
