@@ -9,6 +9,8 @@ Accepts a CSV file containing a `name` and `extra_info` column. Executes a googl
 
 When the `profile_url` field is already populated, skip the row -- this allows the script to be stopped and restarted without redundantly re-searching the same people.
 
+Not all searches yield a linkedin profile. Write `NOT FOUND` in these cases.
+
 Google excels at catching scripted searches, so I rely on a paid subscription to https://developers.oxylabs.io/scraper-apis/web-scraper-api to handle Google queries. There is a free trial available, but once that ends the running cost is still very small. You must create a web scraper API username and password and provide them as command line arguments.
   
 ### scrape_linkedin.py
