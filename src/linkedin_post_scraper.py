@@ -1,17 +1,18 @@
+import os
+import pickle
+import random
+import logging
+import time
+import re
+from typing import Optional
+from urllib.parse import urlparse
+
 from selenium import webdriver
 import undetected_chromedriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse, urlunparse
-import random
-import logging
-import time
-from typing import Optional
-import re
-import os
-import pickle
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -27,9 +28,19 @@ class LinkedinPostScraper:
         self,
         email: str,
         password: str,
-        chrome_options: webdriver.ChromeOptions,
         chrome_version: int,
+        headless: bool = False,
     ):
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--log-level=3")
+        chrome_options.add_argument("--start-maximized")
+
+        if headless:
+            logging.info(
+                "Headless mode. Note this won't work if there is a bot checkpoint at login"
+            )
+            chrome_options.add_argument("--headless")
+
         self.driver = undetected_chromedriver.Chrome(
             options=chrome_options, version_main=chrome_version
         )
@@ -195,8 +206,8 @@ class LinkedinPostScraper:
     def extract_post_id(soup) -> str:
         return soup["data-urn"]
 
-    @classmethod
-    def extract_linkedin_profile(cls, url: str) -> Optional[str]:
+    @staticmethod
+    def extract_linkedin_profile(url: str) -> Optional[str]:
         if "linkedin.com/in/" in url:
             parsed_url = urlparse(url)
             path_components = parsed_url.path.split("/")
@@ -213,7 +224,7 @@ class LinkedinPostScraper:
     def scrape_profile(self, url: str):
         self.driver.get(url)
         time.sleep(3)
-        soup = BeautifulSoup(self.driver.page_source)
+        soup = BeautifulSoup(self.driver.page_source, features="lxml")
 
         followers = LinkedinPostScraper.extract_followers(soup)
         name = LinkedinPostScraper.extract_name(soup)
@@ -229,7 +240,7 @@ class LinkedinPostScraper:
 
         self.scroll_down(batches=10)
 
-        soup = BeautifulSoup(self.driver.page_source)
+        soup = BeautifulSoup(self.driver.page_source, features="lxml")
         posts = LinkedinPostScraper.find_posts(soup)
 
         if not posts:

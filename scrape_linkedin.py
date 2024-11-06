@@ -1,10 +1,12 @@
-from argparse import ArgumentParser
-import pandas
-from selenium import webdriver
-import random
 import json
 import logging
+import random
 import time
+from argparse import ArgumentParser
+
+import pandas
+from selenium import webdriver
+
 from src.linkedin_post_scraper import LinkedinPostScraper
 
 if __name__ == "__main__":
@@ -28,10 +30,16 @@ if __name__ == "__main__":
         "--headless", default=False, action="store_true", help="Do not display browser"
     )
     arg_parser.add_argument(
-        "--n-profiles",
+        "--break-after-n-profiles",
         default=30,
         type=int,
-        help="Stop after N profiles. Required to avoid detection",
+        help="Take a long break after N profiles. Required to avoid detection",
+    )
+    arg_parser.add_argument(
+        "--break-time",
+        default=1.5 * 60 * 60,
+        type=int,
+        help="Length of break in between scraping sessions, in seconds.",
     )
     arg_parser.add_argument(
         "--max-fails-in-a-row",
@@ -56,16 +64,6 @@ if __name__ == "__main__":
         """,
     )
     args = arg_parser.parse_args()
-
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--log-level=3")
-    chrome_options.add_argument("--start-maximized")
-
-    if args.headless:
-        logging.info(
-            "Headless mode. Note this won't work if there is a bot checkpoint at login"
-        )
-        chrome_options.add_argument("--headless")
 
     df_in = pandas.read_csv(args.input, index_col=None).sample(frac=1.0)
     assert (
@@ -92,17 +90,27 @@ if __name__ == "__main__":
         )
 
     scraper = LinkedinPostScraper(
-        chrome_options=chrome_options,
         email=args.email,
         password=args.password,
         chrome_version=args.chrome_version,
+        headless=args.headless,
     )
 
     completed = 0
     failed_in_a_row = 0
     for i, profile_url in enumerate(df_in.profile_url.unique()):
-        if completed >= args.n_profiles:
-            break
+        if (completed + 1) % args.break_after_n_profiles == 0:
+            logging.info("Taking a very long break to avoid detection.")
+            logging.info(f"Sleeping for {args.break_time} seconds...")
+            scraper.driver.quit()
+            time.sleep(args.break_time)
+
+            scraper = LinkedinPostScraper(
+                email=args.email,
+                password=args.password,
+                chrome_version=args.chrome_version,
+                headless=args.headless,
+            )
 
         parsed_url = LinkedinPostScraper.extract_linkedin_profile(profile_url)
 
@@ -121,13 +129,14 @@ if __name__ == "__main__":
             failed_in_a_row = 0
         except Exception as e:
             failed_in_a_row += 1
+
             if failed_in_a_row >= args.max_fails_in_a_row:
                 logging.error("Failed too many times in a row. Stopping.")
                 raise e
-            else:
-                logging.exception(e)
-                logging.error(f"Failed {profile_url}, skipping...")
-                continue
+
+            logging.exception(e)
+            logging.error(f"Failed {profile_url}, skipping...")
+            continue
 
         logging.info(json.dumps(post_data, indent=4))
 

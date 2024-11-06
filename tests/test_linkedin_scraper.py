@@ -1,7 +1,9 @@
-import pytest
 from pathlib import Path
-from src.linkedin_post_scraper import LinkedinPostScraper
+
+import pytest
 from bs4 import BeautifulSoup
+
+from src.linkedin_post_scraper import LinkedinPostScraper
 
 
 @pytest.fixture
