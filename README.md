@@ -3,7 +3,7 @@
 This repo contains 2 scripts:
 
 ### search_google_multi_thread.py
-Accepts a CSV file containing a `name` and `extra_info` column. Executes a google search for each row with the form **"linkedin {name} {extra info}"** and writes the top linkedin profile url back to the input CSV file in a `profile_url` column.
+Accepts a CSV file containing a `name` and `extra_info` column. Executes a google search for each row with the form **"linkedin {name} {extra info}"** and writes the top linkedin profile search result back to the input CSV file in a `profile_url` column.
 
 `extra_info` should contain all known relevant information to narrow the search, such as hometown, specialty, etc.
 
