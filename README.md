@@ -30,7 +30,7 @@ Accepts a list of linkedin profile urls (which can be generated using the previo
 
 This script relies on selenium + chrome to surf linkedin.
 
-Linkedin excels at bot detection, so the scrape executes slowly and will takes long periodic breaks. The break duration can be configured through the command line arguments -- for now, I've left decent default values.
+Linkedin excels at bot detection, so the scrape executes slowly and takes long periodic breaks. The break duration can be configured through the command line arguments -- for now, I've left decent default values.
 
 Note you may need to provide a --chrome-version command line argument depending on your current chrome version. Try running the script first and you may see an error containing the chrome version you need to provide.
 
