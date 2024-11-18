@@ -64,3 +64,14 @@ def test_extract_comments(posts):
 
 def test_extract_name(profile_soup):
     assert LinkedinPostScraper.extract_name(profile_soup) == "Veronica Ramos"
+
+
+@pytest.mark.parametrize(
+    "url, expected_result",
+    [(3, "4 years", True), (2, "4 years", False), (1, "3 months", False)],
+)
+def test_max_lookback_years(years, post_age_string, expected):
+    assert (
+        LinkedinPostScraper.is_post_before_lookback_period(years, post_age_string)
+        == expected
+    )

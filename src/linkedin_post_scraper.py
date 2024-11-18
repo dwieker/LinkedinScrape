@@ -96,20 +96,6 @@ class LinkedinPostScraper:
     def int_cast(s: str) -> int:
         return int(s.strip().replace(",", ""))
 
-    def scroll_down(self, batches: int):
-        scroll_height = 0
-        for _ in range(batches):
-            total_height = int(
-                self.driver.execute_script("return document.body.scrollHeight")
-            )
-            if total_height != scroll_height:
-                scroll_height = total_height
-                self.driver.execute_script(f"window.scrollTo(0, {total_height});")
-                time.sleep(random.uniform(5, 6))
-            else:
-                logging.info("Reached the end of the feed...")
-                return
-
     @staticmethod
     def find_posts(soup):
         return soup.find_all("div", class_="feed-shared-update-v2")
@@ -221,7 +207,18 @@ class LinkedinPostScraper:
                     + "/".join(path_components[: username_index + 1])
                 )
 
-    def scrape_profile(self, url: str):
+    @staticmethod
+    def extract_post_age_years(post):
+        post_age = LinkedinPostScraper.extract_post_age(post)
+
+        if "year" not in post_age:
+            return False
+
+        return int(post_age.split()[0])
+
+    def scrape_profile(
+        self, url: str, max_post_age_years: int = 5, max_posts: int = 30
+    ):
         self.driver.get(url)
         time.sleep(3)
         soup = BeautifulSoup(self.driver.page_source, features="lxml")
@@ -238,20 +235,44 @@ class LinkedinPostScraper:
         )
         time.sleep(random.uniform(3, 6))
 
-        self.scroll_down(batches=10)
+        scroll_height = 0
+        while True:
+            total_height = int(
+                self.driver.execute_script("return document.body.scrollHeight")
+            )
 
-        soup = BeautifulSoup(self.driver.page_source, features="lxml")
-        posts = LinkedinPostScraper.find_posts(soup)
+            soup = BeautifulSoup(self.driver.page_source, features="lxml")
+            posts = LinkedinPostScraper.find_posts(soup)
 
-        if not posts:
-            return [
-                {
-                    "profile_url": url,
-                    "name": name,
-                    "bio": bio,
-                    "followers": followers,
-                }
-            ]
+            if not posts:
+                logging.info("No posts found...")
+                return [
+                    {
+                        "profile_url": url,
+                        "name": name,
+                        "bio": bio,
+                        "followers": followers,
+                    }
+                ]
+
+            if len(posts) > max_posts:
+                logging.info("Max posts reached...")
+                break
+
+            if (
+                LinkedinPostScraper.extract_post_age_years(posts[-1])
+                >= max_post_age_years
+            ):
+                logging.info("Post ages exceed max-post-age-years...")
+                break
+
+            if total_height == scroll_height:
+                logging.info("Reached the end of the feed...")
+                break
+
+            scroll_height = total_height
+            self.driver.execute_script(f"window.scrollTo(0, {total_height});")
+            time.sleep(random.uniform(5, 6))
 
         return [
             {
@@ -268,5 +289,6 @@ class LinkedinPostScraper:
                 "post_type": LinkedinPostScraper.extract_post_type(post),
                 "post_id": LinkedinPostScraper.extract_post_id(post),
             }
-            for post in posts
+            for post in posts[:max_posts]
+            if self.extract_post_age_years(post) <= max_post_age_years
         ]

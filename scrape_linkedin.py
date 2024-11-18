@@ -54,6 +54,18 @@ if __name__ == "__main__":
         help="Override all results in the output CSV instead of skipping already scraped profiles",
     )
     arg_parser.add_argument(
+        "--max-post-age-years",
+        default=10,
+        type=int,
+        help="Stop scraping posts published more than max-post-age-years years ago. Note that post ages are rough estimates.",
+    )
+    arg_parser.add_argument(
+        "--max-posts",
+        default=30,
+        type=int,
+        help="Scrape a maximum of max-posts on each profile.",
+    )
+    arg_parser.add_argument(
         "--chrome-version",
         default=130,
         required=False,
@@ -125,7 +137,11 @@ if __name__ == "__main__":
         logging.info(parsed_url)
 
         try:
-            post_data = scraper.scrape_profile(parsed_url)
+            post_data = scraper.scrape_profile(
+                parsed_url,
+                max_post_age_years=args.max_post_age_years,
+                max_posts=args.max_posts,
+            )
             failed_in_a_row = 0
         except Exception as e:
             failed_in_a_row += 1
