@@ -231,7 +231,7 @@ class LinkedinPostScraper:
 
         self.driver.get(url + "/recent-activity/all/")
         WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "scaffold-layout__main"))
+            EC.presence_of_element_located((By.CLASS_NAME, "feed-shared-update-v2"))
         )
         time.sleep(random.uniform(3, 6))
 
