@@ -230,10 +230,7 @@ class LinkedinPostScraper:
         time.sleep(random.uniform(3, 6))
 
         self.driver.get(url + "/recent-activity/all/")
-        WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "feed-shared-update-v2"))
-        )
-        time.sleep(random.uniform(3, 6))
+        time.sleep(random.uniform(4, 6))
 
         scroll_height = 0
         while True:
